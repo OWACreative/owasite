@@ -1,3 +1,3 @@
 OWA Creative Website
 
-Grav details / Setup - README.md
+Grav details / Setup - INFO.md
