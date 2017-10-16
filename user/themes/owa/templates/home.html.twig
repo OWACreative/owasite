@@ -1,0 +1,147 @@
+{% extends 'partials/base.html.twig' %}
+
+{% block content %}
+
+<section class="section-intro">
+  <div class="intro">
+    {{ page.content }}
+  </div>
+</section>
+
+<section id="section-feature" class="section-feature">
+  <div class="container">
+    <h2 class="section-title">Featured__Work</h2>
+    <div class="feature-list">
+
+      {% for page in page.find('/work').children %}
+        {% set thumbnail = "" %}
+
+        {% for key, item in page.header.thumbnail %}
+          {% set thumbnail = item.path %}
+        {% endfor %}
+      <div class="feat-col">
+        <a href="{{page.url}}" class="feature">
+          <img class="feature__img" src="{{thumbnail}}" alt="{{page.title}}">
+          <div class="feature__overlay"></div>
+          <div class="feature__overlay-data">
+            <h3 class="feature__title">{{page.title}}</h3>
+            <h4 class="feature__view">View More</h4>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+
+      <div class="feat-col">
+        <a href="mailto:hi@owacreative.com" class="feature hover">
+          <img class="feature__img" src="{{ url('theme://images/placeholder.jpg') }}" alt="Contact Us">
+          <div class="feature__overlay"></div>
+          <div class="feature__overlay-data">
+            <h3 class="feature__title">Like what you see?</h3>
+            <h4 class="feature__view">Contact Us</h4>
+          </div>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="section-about" class="section-about">
+  <div class="container">
+    <h2 class="section-title">We__Are</h2>
+  </div>
+
+  <div class="row">
+    <div class="person">
+      <div class="person__band">
+        <div class="person__data">
+          <img src="{{ url('theme://images/diego.jpg') }}" alt="Diego Mera" class="person__img">
+          <h3 class="person__name">Diego__Mera</h3>
+          <h4 class="person__position">Senior__Designer</h4>
+        </div>
+      </div>
+      <div class="person__bio">
+        <p>
+          Diego is an experienced designer with more than ten years on the field.
+          He has worked in projects that involve branding, identity, marketing, web design and illustration.
+        </p>
+
+        <p>
+          Diego has a bachelor's degree in marketing and advertising. <br>
+          He has worked with world class brands such as Ray Ban, Oakley and Bank Itaú.
+        </p>
+      </div>
+    </div>
+    <div class="person person--right">
+      <div class="person__band">
+        <div class="person__data">
+          <img src="{{ url('theme://images/carlos.jpg') }}" alt="Carlos Alonso" class="person__img">
+          <h3 class="person__name">Carlos__Alonso</h3>
+          <h4 class="person__position">Senior__Designer</h4>
+        </div>
+      </div>
+      <div class="person__bio">
+        <p>
+          Carlos has more than ten years of experience working in agencies, studios,
+          magazines and also as a freelancer, he keeps improving his skills each
+          day by never stops to being curious and passionate.
+        </p>
+
+        <p>
+          Carlos has a bachelor's degree in graphic design. He also studied photography and creative copywriting.
+          He feels comfortable combining typography, shapes and photography to create unique and stylish graphic pieces, but never losing the client’s objectives.
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="person">
+      <div class="person__band">
+        <div class="person__data">
+          <img src="{{ url('theme://images/german.jpg') }}" alt="Germán Dotta" class="person__img">
+          <h3 class="person__name">Germán__Dotta</h3>
+          <h4 class="person__position">Senior__Designer</h4>
+        </div>
+      </div>
+      <div class="person__bio">
+        <p>
+          Germán works as art director and brand designer since 2003 and branding professor in since 2010.
+        </p>
+        <p>
+          Germán focuses on concept, design, development, brand management and identity systems across several mediums such as editorial, packaging, web and apps.
+        </p>
+        <p>
+          He has worked with renowned companies and organizations such as BID (Banco Interamericano de Desarrollo), ORT University, 3Sixty and Cortez Brothers.
+        </p>
+      </div>
+    </div>
+    <div class="person person--right">
+      <div class="person__band">
+        <div class="person__data">
+          <img src="{{ url('theme://images/nacho.jpg') }}" alt="Nacho Toledo" class="person__img">
+          <h3 class="person__name">Nacho__Toledo</h3>
+          <h4 class="person__position">Frontend__Designer</h4>
+        </div>
+      </div>
+      <div class="person__bio">
+        <p>
+          Nacho is a web developer with almost ten years of experience in various areas of IT.
+          He currently focuses on web/mobile design, but also feels comfortable with front-end tools.
+        </p>
+        <p>
+          With a keen eye for design and outstanding CSS/HTML knowledge, he focuses on
+          best practices and good communication to get the job done.
+        </p>
+        <p>
+          He has worked for renowned companies such as BestBuy, Salesforce and Autodesk.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+{% endblock %}

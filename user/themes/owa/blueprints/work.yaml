@@ -1,0 +1,51 @@
+title: Work
+'@extends':
+    type: default
+    context: blueprints://pages
+
+form:
+  fields:
+    tabs:
+      type: tabs
+      active: 1
+
+      fields:
+        content:
+          fields:
+            header.thumbnail:
+              name: thumbnail
+              id: thumbnail
+              label: Thumbnail
+              type: file
+              multiple: false
+              destination: 'page@:/home'
+              accept:
+                - image/*
+        gallery:
+          type: tab
+          title: Gallery
+
+          fields:
+            header.gallery:
+              name: gallery
+              id: gallery
+              type: list
+              style: vertical
+              label: Gallery
+              fields:
+                .file:
+                  type: filepicker
+                  id: file
+                  folder: '@self'
+                  label: Select a file
+                  preview_images: true
+                  acccept:
+                    - .png
+                    - .jpg
+                    - .gif
+                    - .mov
+                    - .mp4
+                .caption:
+                  id: caption
+                  type: text
+                  label: Caption

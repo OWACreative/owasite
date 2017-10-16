@@ -1,0 +1,31 @@
+{% extends 'partials/base.html.twig' %}
+
+{% block content %}
+<article class="section-work">
+
+      <div class="container">
+        <h2 class="work-title">{{page.title}}</h2>
+        <div class="work__description">
+          {{page.content}}
+        </div>
+
+        {% if page.header.gallery %}
+          {% for image in page.header.gallery %}
+          <figure class="work__img">
+            {{page.media[image.file].html}}
+            <figcaption>
+              {{image.caption}}
+            </figcaption>
+          </figure>
+          {% endfor %}
+        {% else %}
+          {% for image in page.media.images %}
+          <figure class="work__img">
+            {{image.html}}
+          </figure>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+    </article>
+{% endblock %}

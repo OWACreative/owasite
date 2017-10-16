@@ -1,0 +1,17 @@
+title: 'OWA Creative'
+default_lang: en
+author:
+  name: 'Nacho Toledo'
+  email: nacho@owacreative.com
+taxonomies:
+  - category
+  - tag
+metadata:
+  description: 'We help our clients be great at what they do.  We are a team of designers, developers, branding specialists and experts who love working on anything from branding, graphic identities and web apps to magazines, books and packaging.'
+summary:
+  enabled: true
+  format: short
+  size: 300
+  delimiter: '==='
+blog:
+  route: /blog

@@ -1,0 +1,25 @@
+# Grav Specific
+vendor
+robots.txt
+rsync-exclude.txt
+rsync.log
+.sass-cache
+composer.lock
+cache/*
+assets/*
+logs/*
+images/*
+user/data/*
+user/accounts/*
+tmp/*
+backup/*
+
+
+# OS Generated
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+*.swp
+
+deploy.sh
