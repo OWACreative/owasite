@@ -8,7 +8,7 @@ author:
 taxonomies: [category,tag]                  # Arbitrary list of taxonomy types
 
 metadata:
-  description: 'OWA Creative'               # Site description
+  description: 'My Grav Site'               # Site description
 
 summary:
   enabled: true                             # enable or disable summary of page

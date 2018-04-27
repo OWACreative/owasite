@@ -46,7 +46,7 @@ Dropzone.confirm = (question, accepted, rejected) => {
 };
 
 const DropzoneMediaConfig = {
-    createImageThumbnails: { },
+    timeout: 0,
     thumbnailWidth: 200,
     thumbnailHeight: 150,
     addRemoveLinks: false,
@@ -63,10 +63,38 @@ const DropzoneMediaConfig = {
           <div class="dz-success-mark"><span>✔</span></div>
           <div class="dz-error-mark"><span>✘</span></div>
           <div class="dz-error-message"><span data-dz-errormessage></span></div>
+          <a class="dz-unset" title="${translations.PLUGIN_ADMIN.UNSET}" href="#" data-dz-unset>${translations.PLUGIN_ADMIN.UNSET}</a>
           <a class="dz-remove" title="${translations.PLUGIN_ADMIN.DELETE}" href="javascript:undefined;" data-dz-remove>${translations.PLUGIN_ADMIN.DELETE}</a>
           <a class="dz-metadata" title="${translations.PLUGIN_ADMIN.METADATA}" href="#" target="_blank" data-dz-metadata>${translations.PLUGIN_ADMIN.METADATA}</a>
           <a class="dz-view" title="${translations.PLUGIN_ADMIN.VIEW}" href="#" target="_blank" data-dz-view>${translations.PLUGIN_ADMIN.VIEW}</a>
         </div>`.trim()
+};
+
+const ACCEPT_FUNC = function(file, done, settings) {
+    const resolution = settings.resolution;
+    if (!resolution) return done();
+
+    setTimeout(() => {
+        let error = '';
+        if (resolution.min) {
+            Object.keys(resolution.min).forEach((attr) => {
+                if (resolution.min[attr] && file[attr] < resolution.min[attr]) {
+                    error += translations.PLUGIN_FORM.RESOLUTION_MIN.replace(/{{attr}}/g, attr).replace(/{{min}}/g, resolution.min[attr]);
+                }
+            });
+        }
+
+        if (!(settings.resizeWidth || settings.resizeHeight)) {
+            if (resolution.max) {
+                Object.keys(resolution.max).forEach((attr) => {
+                    if (resolution.max[attr] && file[attr] > resolution.max[attr]) {
+                        error += translations.PLUGIN_FORM.RESOLUTION_MAX.replace(/{{attr}}/g, attr).replace(/{{max}}/g, resolution.max[attr]);
+                    }
+                });
+            }
+        }
+        return error ? done(error) : done();
+    }, 50);
 };
 
 export default class FilesField {
@@ -81,6 +109,10 @@ export default class FilesField {
             acceptedFiles: this.container.data('media-types'),
             init: this.initDropzone
         }, this.container.data('dropzone-options'), options);
+
+        this.options = Object.assign({}, this.options, {
+            accept: function(file, done) { ACCEPT_FUNC(file, done, this.options); }
+        });
 
         this.dropzone = new Dropzone(container, this.options);
         this.dropzone.on('complete', this.onDropzoneComplete.bind(this));
@@ -256,7 +288,7 @@ export function UriToMarkdown(uri) {
     uri = uri.replace(/\(/g, '%28');
     uri = uri.replace(/\)/g, '%29');
 
-    return uri.match(/\.(jpe?g|png|gif|svg)$/i) ? `![](${uri})` : `[${decodeURI(uri)}](${uri})`;
+    return uri.match(/\.(jpe?g|png|gif|svg|mp4|webm|ogv|mov)$/i) ? `![](${uri})` : `[${decodeURI(uri)}](${uri})`;
 }
 
 let instances = [];
@@ -288,7 +320,11 @@ const addNode = (container) => {
         dotNotation: settings.name || 'file',
         acceptedFiles: settings.accept ? settings.accept.join(',') : input.attr('accept') || container.data('media-types'),
         maxFilesize: typeof settings.filesize !== 'undefined' ? settings.filesize : 256,
-        maxFiles: settings.limit || null
+        maxFiles: settings.limit || null,
+        resizeWidth: settings.resizeWidth || null,
+        resizeHeight: settings.resizeHeight || null,
+        resizeQuality: settings.resizeQuality || null,
+        accept: function(file, done) { ACCEPT_FUNC(file, done, settings); }
     };
 
     cache = cache.add(container);
