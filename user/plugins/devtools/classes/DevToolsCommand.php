@@ -2,8 +2,6 @@
 namespace Grav\Plugin\Console;
 
 use Grav\Common\Grav;
-use Grav\Common\Data;
-use Grav\Common\Theme;
 use Grav\Common\Filesystem\Folder;
 use Grav\Common\GPM\GPM;
 use Grav\Common\Inflector;
@@ -11,6 +9,7 @@ use Grav\Common\Twig\Twig;
 use Grav\Common\Utils;
 use RocketTheme\Toolbox\File\File;
 use Grav\Console\ConsoleCommand;
+use RocketTheme\Toolbox\ResourceLocator\UniformResourceLocator;
 
 /**
  * Class DevToolsCommand
@@ -30,7 +29,7 @@ class DevToolsCommand extends ConsoleCommand
     protected $inflector;
 
     /**
-     * @var Locator
+     * @var UniformResourceLocator
      */
     protected $locator;
 
@@ -45,6 +44,11 @@ class DevToolsCommand extends ConsoleCommand
      * @var gpm
      */
     protected $gpm;
+
+    /**
+     * @var array
+     */
+    protected $reserved_keywords = array('__halt_compiler', 'abstract', 'and', 'array', 'as', 'break', 'callable', 'case', 'catch', 'class', 'clone', 'const', 'continue', 'declare', 'default', 'die', 'do', 'echo', 'else', 'elseif', 'empty', 'enddeclare', 'endfor', 'endforeach', 'endif', 'endswitch', 'endwhile', 'eval', 'exit', 'extends', 'final', 'for', 'foreach', 'function', 'global', 'goto', 'if', 'implements', 'include', 'include_once', 'instanceof', 'insteadof', 'interface', 'isset', 'list', 'namespace', 'new', 'or', 'print', 'private', 'protected', 'public', 'require', 'require_once', 'return', 'static', 'switch', 'throw', 'trait', 'try', 'unset', 'use', 'var', 'while', 'xor');
 
 
     /**
@@ -90,13 +94,14 @@ class DevToolsCommand extends ConsoleCommand
         $source_theme = null;
 
         if (isset($this->component['copy'])) {
-            $source_theme = $this->locator->findResource('themes://' . $this->component['copy']);
+            $current_theme = $this->component['copy'];
+            $source_theme = $this->locator->findResource('themes://' . $current_theme);
             $template_folder = $source_theme;
         } else {
             $template_folder = __DIR__ . '/../components/' . $type . DS . $template;
         }
 
-        if ($type == 'blueprint') {
+        if ($type === 'blueprint') {
             $component_folder = $this->locator->findResource('themes://' . $current_theme) . '/blueprints';
         } else {
             $component_folder = $this->locator->findResource($type . 's://') . DS . $folder_name;
@@ -198,7 +203,7 @@ class DevToolsCommand extends ConsoleCommand
                 $this->output->writeln($type . "creation failed!");
                 return false;
             }
-            if ($type != 'blueprint') {
+            if ($type !== 'blueprint') {
                 rename($component_folder . DS . $type . '.php', $component_folder . DS . $folder_name . '.php');
                 rename($component_folder . DS . $type . '.yaml', $component_folder . DS . $folder_name . '.yaml');
             } else {
@@ -214,6 +219,12 @@ class DevToolsCommand extends ConsoleCommand
         $this->output->writeln('');
         $this->output->writeln('Path: <cyan>' . $component_folder . '</cyan>');
         $this->output->writeln('');
+        if ($type === 'plugin') {
+            $this->output->writeln('<yellow>Make sure to run `composer update` to initialize the autoloader</yellow>');
+            $this->output->writeln('');
+        }
+
+        return true;
     }
 
     /**
@@ -235,14 +246,29 @@ class DevToolsCommand extends ConsoleCommand
      */
     protected function validate($type, $value, $extra = '')
     {
+        $grav = Grav::instance();
+        $config = $grav['config'];
         switch ($type) {
             case 'name':
-                //Check If name
+                // Check If name
                 if ($value === null || trim($value) === '') {
                     throw new \RuntimeException('Name cannot be empty');
                 }
-                if (false !== $this->gpm->findPackage($value)) {
-                    throw new \RuntimeException('Package name exists in GPM');
+
+                // Check for name collision with online gpm.
+                $collision_check = $config->get('plugins.devtools.collision_check');
+                if ( $collision_check == true) {
+                    if (false !== $this->gpm->findPackage($value)) {
+                        throw new \RuntimeException('Package name exists in GPM');
+                    }
+                } else {
+                    $this->output->writeln('<red>Warning</red>: Devtools is configured for "<cyan>collision_check</cyan>: <red>false</red>".');
+                    $this->output->writeln('Please be aware that your project\'s plugin or theme name may conflict with an existing plugin or theme.');
+                }
+
+                // Check if it's reserved
+                if ($this->isReservedWord(strtolower($value))) {
+                    throw new \RuntimeException("\"" . $value . "\" is a reserved word and cannot be used as the name");
                 }
 
                 break;
@@ -271,7 +297,7 @@ class DevToolsCommand extends ConsoleCommand
                 break;
 
             case 'email':
-                if (!preg_match('/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/', $value)) {
+                if (!preg_match('/^(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){255,})(?!(?:(?:\x22?\x5C[\x00-\x7E]\x22?)|(?:\x22?[^\x5C\x22]\x22?)){65,}@)(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22))(?:\.(?:(?:[\x21\x23-\x27\x2A\x2B\x2D\x2F-\x39\x3D\x3F\x5E-\x7E]+)|(?:\x22(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21\x23-\x5B\x5D-\x7F]|(?:\x5C[\x00-\x7F]))*\x22)))*@(?:(?:(?!.*[^.]{64,})(?:(?:(?:xn--)?[a-z0-9]+(?:-[a-z0-9]+)*\.){1,126}){1,}(?:(?:[a-z][a-z0-9]*)|(?:(?:xn--)[a-z0-9]+))(?:-[a-z0-9]+)*)|(?:\[(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){7})|(?:(?!(?:.*[a-f0-9][:\]]){7,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,5})?)))|(?:(?:IPv6:(?:(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){5}:)|(?:(?!(?:.*[a-f0-9]:){5,})(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3})?::(?:[a-f0-9]{1,4}(?::[a-f0-9]{1,4}){0,3}:)?)))?(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))(?:\.(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:1[0-9]{2})|(?:[1-9]?[0-9]))){3}))\]))$/iD', $value)) {
                     throw new \RuntimeException('Not a valid email address');
                 }
 
@@ -279,5 +305,13 @@ class DevToolsCommand extends ConsoleCommand
         }
 
         return $value;
+    }
+
+    public function isReservedWord($word)
+    {
+        if (in_array($word, $this->reserved_keywords, true)) {
+            return true;
+        }
+        return false;
     }
 }

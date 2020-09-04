@@ -12,6 +12,18 @@ These are available via GPM, and because the plugin has dependencies you just ne
 $ bin/gpm install login
 ```
 
+# Changes in version 3.2
+
+New events:
+
+* `onUserLoginAuthorized`   Allows plugins to include their own logic when user gets authorized (usually after 2FA challenge).
+
+# Changes in version 3.1
+
+New events:
+
+* `onUserActivated`         Allows plugins to hook into user activation, when user has clicked on confirmation email.
+
 # Changes in version 2.6
 
 * User registration is now disabled by default.  If you were relying on it being activated, you need to manually enable it in your `user/config/plugins/login.yaml`:
@@ -36,6 +48,8 @@ They use following events which can be hooked by plugins:
 * `onUserLogout`            Allows plugins to include their own logic when user logs out.
 * `onUserLoginRegisterData` Allows plugins to include their own data to be added to the user object during registration.
 * `onUserLoginRegistered`   Allows plugins to hook into user registration just before the redirect.
+
+All the events use `UserLoginEvent` with some useful methods to see what is going on.
 
 New Plugin options have been added for:
 
@@ -62,7 +76,7 @@ A good location is probably to add this right above where your content is going 
 
 # Creating Users
 
-You can either use the built-in CLI capabilities, or you create a user manually by creating a new YAML file in your `user/acounts` folder.
+You can either use the built-in CLI capabilities, or you create a user manually by creating a new YAML file in your `user/accounts` folder.
 
 
 # CLI Usage
@@ -139,31 +153,68 @@ access:
 # Default Configuration
 
 ```yaml
-enabled: true                             # Enable the plugin
-built_in_css: true                        # Use built-in CSS
-route:                                    # Specific route for Login page (default is '/login')
-redirect_to_login: true                   # If you try to access a page you don't have access to, should you redirect to login route
-redirect_after_login:                     # Path to redirect to after a successful login (eg '/user_profile')
-route_activate: '/activate_user'          # Route for the user activation process
-route_forgot: '/forgot_password'          # Route for the forgot password process
-route_reset: '/reset_password'            # Route for the reset password process
-route_profile: '/user_profile'            # Route for the user profile page
-route_register: '/user_register'          # Route for the user registration page
-route_unauthorized: '/user_unauthorized'  # Route for a page to display if user is unauthorized
+enabled: true                               # Enable the plugin
+built_in_css: true                          # Use built-in CSS
+redirect_to_login: false                    # If you try to access a page you don't have access to, should you redirect to login route
+redirect_after_login: true                  # Path to redirect to after a successful login
+redirect_after_logout: true                 # Path to redirect to after a successful logout
 
-dynamic_page_visibility: false            # Integrate access into page visibility so things can be shown or hidden in the menu
-parent_acl: false                         # Look to parent `access` rules for access requirements
-protect_protected_page_media: false       # Take `access` rules into account when directly accessing a page's media
+route: '/login'                             # Specific route for Login page (default is '/login')
+route_after_login:                          # Route to go to after login if enabled
+route_after_logout:                         # Route to logout to if enabled
+route_activate: '/activate_user'            # Route for the user activation process
+route_forgot: '/forgot_password'            # Route for the forgot password process
+route_reset: '/reset_password'              # Route for the reset password process
+route_profile: '/user_profile'              # Route for the user profile page
+route_register: '/user_register'            # Route for the user registration page
+route_unauthorized: '/user_unauthorized'    # Route for a page to display if user is unauthorized
+
+twofa_enabled: false                        # Two factor authentication enabled
+dynamic_page_visibility: false              # Integrate access into page visibility so things can be shown or hidden in the menu
+parent_acl: false                           # Look to parent `access` rules for access requirements
+protect_protected_page_media: false         # Take `access` rules into account when directly accessing a page's media
 
 rememberme:
-  enabled: true                           # Enable 'remember me' functionality
-  timeout: 604800                         # Timeout in seconds. Defaults to 1 week
-  name: grav-rememberme                   # Name prefix of the session cookie
+  enabled: true                             # Enable 'remember me' functionality
+  timeout: 604800                           # Timeout in seconds. Defaults to 1 week
+  name: grav-rememberme                     # Name prefix of the session cookie
 
-max_pw_resets_count: 0                    # Number of password resets in a specific time frame (0 = unlimited)
-max_pw_resets_interval: 60                # Time in minutes to track password resets
-max_login_count: 0                        # Number of failed login attempts in a specific time frame (0 = unlimited)
-max_login_interval: 2                     # Time in minutes to track login attempts
+max_pw_resets_count: 2                      # Number of password resets in a specific time frame (0 = unlimited)
+max_pw_resets_interval: 60                  # Time in minutes to track password resets
+max_login_count: 5                          # Number of failed login attempts in a specific time frame (0 = unlimited)
+max_login_interval: 10                      # Time in minutes to track login attempts
+ipv6_subnet_size: 64                        # Size of IPv6 block to track login attempts
+
+user_registration:
+  enabled: false                            # Enable User Registration Process
+
+  fields:                                   # List of fields to validate and store during user registration
+    - 'username'                            # This should match up with your registration form definition
+    - 'password'
+    - 'email'
+    - 'fullname'
+    - 'title'
+    - 'level'
+    - 'twofa_enabled'
+
+  default_values:                           # Any default values for fields you would like to set
+    level: Newbie                           # Here the 'level' field will be pre-populated with 'Newbie' text
+
+  access:                                   # Default access to set for users created during registration
+    site:
+      login: 'true'
+
+  redirect_after_registration: ''           # Route to redirect to after registration
+  redirect_after_activation: ''             # Route to redirect to after activation
+
+  options:
+    validate_password1_and_password2: true  # Ensure that password1 and password2 match during registration (allows you to have just 1 pw field or 2)
+    set_user_disabled: false                # Set this `true` if you want a user to activate their account via email
+    login_after_registration: false         # Automatically login after registration
+    send_activation_email: false            # Send an email that requires a special link to be clicked in order to activate the account
+    manually_enable: false                  # When using activation email, don't enable until an admin does it manually
+    send_notification_email: false          # Send an email to the site administrator to indicate a user has registered
+    send_welcome_email: false               # Send a welcome email to the user (probably should not be used with `send_activation_email`
 ``` 
 
 # Usage
@@ -191,7 +242,7 @@ Enabling the setting "Use parent access rules" (`parent_acl` in login.yaml) allo
 
 The login plugin can **automatically generate** a login page for you when you try to access a page that your user (or guest account) does not have access to.
 
-Alternatively, you can also provide a specific login route if you wish to forward users to a specific login page. To do this you need to create a copy of the `login.yaml` from the plugin in your `user/config/plugins` folder and provide a specific route (or just edit the plugin setttings in the admin plugin).
+Alternatively, you can also provide a specific login route if you wish to forward users to a specific login page. To do this you need to create a copy of the `login.yaml` from the plugin in your `user/config/plugins` folder and provide a specific route (or just edit the plugin settings in the admin plugin).
 
 ```
 route: /user-login
@@ -483,7 +534,22 @@ You can set the "Redirect after registration" option in the Login plugin, or as 
        display: /welcome
 ```
 
+## Dynamic Page Visibility
 
+You can control whether or not a page is visible to a user by first enabling the option in the `login` configuration:
+
+```
+dyanamic_page_visilbity: true
+```
+
+With this activated you can put the following option into the header of each page:
+
+```
+login:
+    visibility_requires_access: true
+```
+
+This will ensure the `access:` options on the page are satisfied in order for this page to be `visible` and therefore displayed in the menu structure.
 
 # Known issues
 
