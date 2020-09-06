@@ -1,0 +1,5 @@
+enabled: true
+active: true
+allow_login: false
+login_access: 'site.login'
+maintenance_page_route: '/maintenance'
